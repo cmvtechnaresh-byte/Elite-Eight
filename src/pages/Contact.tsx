@@ -102,7 +102,7 @@ const Contact = () => {
                       </div>
                       <div>
                         <p className="font-medium">Visit Us</p>
-                        <p className="text-muted-foreground">Mumbai, Maharashtra, India</p>
+                        <p className="text-muted-foreground">Mumbai & New Delhi, India</p>
                       </div>
                     </CardContent>
                   </Card>
