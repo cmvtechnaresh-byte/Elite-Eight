@@ -1,42 +1,22 @@
+import { useEffect, useState } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+
+// Components
 import { motion } from "framer-motion";
 import { Star, Quote } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const testimonials = [
-  {
-    name: "Rajesh Sharma",
-    role: "HR Director",
-    company: "Tech Mahindra",
-    image: "",
-    content: "Elite Eight transformed our sales team's performance. Their training programs are practical, engaging, and delivered measurable results within weeks.",
-    rating: 5,
-  },
-  {
-    name: "Priya Patel",
-    role: "CEO",
-    company: "StartUp Innovations",
-    image: "",
-    content: "The PoSH workshop was eye-opening. Professional delivery, comprehensive content, and our team now feels more confident about workplace safety.",
-    rating: 5,
-  },
-  {
-    name: "Amit Kumar",
-    role: "Operations Head",
-    company: "Global Finance Corp",
-    image: "",
-    content: "Their recruitment services helped us find exceptional talent. The candidates were pre-screened perfectly and fit our culture seamlessly.",
-    rating: 5,
-  },
-  {
-    name: "Neha Singh",
-    role: "Managing Director",
-    company: "Manufacturing Ltd",
-    image: "",
-    content: "Organizational development consulting from Elite Eight helped us streamline operations and boost employee engagement by 40%.",
-    rating: 5,
-  },
-];
+interface Testimonial {
+  id: string;
+  name: string;
+  role: string;
+  company: string;
+  content: string;
+  rating: number;
+  image?: string;
+}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -60,7 +40,26 @@ const cardVariants = {
   },
 };
 
+import { initialTestimonials } from "@/lib/initialData";
+
 export const Testimonials = () => {
+  const [testimonials, setTestimonials] = useState<Testimonial[]>(initialTestimonials as any[]);
+
+  useEffect(() => {
+    const fetchTestimonials = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "testimonials"));
+        if (!querySnapshot.empty) {
+          const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Testimonial[];
+          setTestimonials(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch testimonials", err);
+      }
+    }
+    fetchTestimonials();
+  }, []);
+
   return (
     <section className="py-24 bg-gradient-to-b from-background to-muted/30">
       <div className="container">

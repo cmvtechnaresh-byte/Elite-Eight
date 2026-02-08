@@ -3,93 +3,37 @@ import { Layout } from "@/components/layout/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
-const services = [
-  {
-    id: "corporate-training",
-    icon: Users,
-    title: "Corporate Training",
-    description: "Elevate your team's capabilities with our comprehensive training programs.",
-    subServices: [
-      {
-        title: "Sales Training",
-        features: [
-          "Advanced selling techniques",
-          "Customer relationship management",
-          "Negotiation skills",
-          "Pipeline management",
-          "Closing strategies",
-        ],
-      },
-      {
-        title: "Behavioural Training",
-        features: [
-          "Leadership development",
-          "Communication skills",
-          "Team building",
-          "Conflict resolution",
-          "Emotional intelligence",
-        ],
-      },
-    ],
-  },
-  {
-    id: "compliance-training",
-    icon: Shield,
-    title: "Compliance Training",
-    description: "Ensure your organization meets all regulatory requirements.",
-    subServices: [
-      {
-        title: "PoSH Workshop",
-        features: [
-          "Prevention of Sexual Harassment training",
-          "Internal Committee formation",
-          "Policy development",
-          "Case handling procedures",
-          "Annual compliance requirements",
-        ],
-      },
-    ],
-  },
-  {
-    id: "recruitment",
-    icon: UserPlus,
-    title: "Recruitment",
-    description: "Find the right talent to drive your organization forward.",
-    subServices: [
-      {
-        title: "HR Department",
-        features: [
-          "Executive search",
-          "Mid-level recruitment",
-          "Campus hiring",
-          "Contract staffing",
-          "Background verification",
-        ],
-      },
-    ],
-  },
-  {
-    id: "organizational-development",
-    icon: TrendingUp,
-    title: "Organizational Development",
-    description: "Transform your organization for sustainable growth.",
-    subServices: [
-      {
-        title: "Strategic Initiatives",
-        features: [
-          "Culture transformation",
-          "Change management",
-          "Performance management systems",
-          "Succession planning",
-          "Employee engagement programs",
-        ],
-      },
-    ],
-  },
-];
+import { initialServices } from "@/lib/initialData";
+
+const iconMap: any = {
+  Users, Shield, UserPlus, TrendingUp, CheckCircle, Mail, Phone
+};
 
 const Services = () => {
+  const [services, setServices] = useState<any[]>(initialServices);
+
+  useEffect(() => {
+    const fetchServices = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "services"));
+        if (!querySnapshot.empty) {
+          const data = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setServices(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch services", err);
+        // Fallback to initialServices acts as error handling too
+      }
+    }
+    fetchServices();
+  }, []);
+
+  // Display services is just services state now
+  const displayServices = services;
   return (
     <Layout>
       {/* Hero */}
@@ -98,7 +42,7 @@ const Services = () => {
           <div className="max-w-3xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">Our Services</h1>
             <p className="text-lg text-muted-foreground">
-              Comprehensive solutions designed to elevate your organization's 
+              Comprehensive solutions designed to elevate your organization's
               performance, compliance, and talent management.
             </p>
           </div>
@@ -108,43 +52,46 @@ const Services = () => {
       {/* Services */}
       <section className="py-20">
         <div className="container space-y-20">
-          {services.map((service, index) => (
-            <div
-              key={service.id}
-              id={service.id}
-              className={`scroll-mt-20 ${index % 2 === 1 ? "bg-muted -mx-4 px-4 py-12 md:-mx-8 md:px-8 rounded-2xl" : ""}`}
-            >
-              <div className="flex items-center gap-4 mb-8">
-                <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center">
-                  <service.icon className="h-7 w-7 text-primary-foreground" />
+          {displayServices.map((service, index) => {
+            const IconComponent = iconMap[service.icon] || Users;
+            return (
+              <div
+                key={service.id}
+                id={service.id}
+                className={`scroll-mt-20 ${index % 2 === 1 ? "bg-muted -mx-4 px-4 py-12 md:-mx-8 md:px-8 rounded-2xl" : ""}`}
+              >
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="w-14 h-14 rounded-xl bg-primary flex items-center justify-center">
+                    <IconComponent className="h-7 w-7 text-primary-foreground" />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-bold">{service.title}</h2>
+                    <p className="text-muted-foreground">{service.description}</p>
+                  </div>
                 </div>
-                <div>
-                  <h2 className="text-3xl font-bold">{service.title}</h2>
-                  <p className="text-muted-foreground">{service.description}</p>
-                </div>
-              </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                {service.subServices.map((sub) => (
-                  <Card key={sub.title}>
-                    <CardHeader>
-                      <CardTitle className="text-xl">{sub.title}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <ul className="space-y-3">
-                        {sub.features.map((feature) => (
-                          <li key={feature} className="flex items-start gap-3">
-                            <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                            <span className="text-muted-foreground">{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-                  </Card>
-                ))}
+                <div className="grid md:grid-cols-2 gap-6">
+                  {service.subServices && service.subServices.map((sub: any) => (
+                    <Card key={sub.title}>
+                      <CardHeader>
+                        <CardTitle className="text-xl">{sub.title}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <ul className="space-y-3">
+                          {sub.features && sub.features.map((feature: string) => (
+                            <li key={feature} className="flex items-start gap-3">
+                              <CheckCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                              <span className="text-muted-foreground">{feature}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       </section>
 

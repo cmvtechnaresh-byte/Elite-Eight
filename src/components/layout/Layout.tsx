@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { ModernHeader } from "./ModernHeader";
 import { Footer } from "./Footer";
+import { WhatsAppWidget } from "../WhatsAppWidget";
 
 interface LayoutProps {
   children: ReactNode;
@@ -12,6 +13,7 @@ export const Layout = ({ children }: LayoutProps) => {
       <ModernHeader />
       <main className="flex-1">{children}</main>
       <Footer />
+      <WhatsAppWidget />
     </div>
   );
 };

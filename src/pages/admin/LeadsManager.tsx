@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,14 +6,19 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Eye, Mail, Trash2, Download } from "lucide-react";
+import { collection, onSnapshot, deleteDoc, doc, updateDoc, Timestamp } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { useToast } from "@/components/ui/use-toast";
 
-const leads = [
-  { id: 1, name: "Rajesh Kumar", email: "rajesh@techsolutions.com", company: "Tech Solutions Pvt Ltd", service: "Corporate Training", status: "new", date: "2024-01-15" },
-  { id: 2, name: "Priya Sharma", email: "priya@globalfinance.com", company: "Global Finance Corp", service: "PoSH Workshop", status: "contacted", date: "2024-01-14" },
-  { id: 3, name: "Amit Patel", email: "amit@startup.io", company: "StartUp Innovations", service: "Recruitment", status: "qualified", date: "2024-01-13" },
-  { id: 4, name: "Neha Singh", email: "neha@manufacturing.com", company: "Manufacturing Ltd", service: "Organizational Development", status: "closed", date: "2024-01-12" },
-  { id: 5, name: "Vikram Mehta", email: "vikram@retail.com", company: "Retail Giants", service: "Sales Training", status: "new", date: "2024-01-11" },
-];
+interface Lead {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  service: string;
+  status: string;
+  createdAt: any;
+}
 
 const statusColors: Record<string, string> = {
   new: "bg-blue-100 text-blue-800",
@@ -23,24 +28,66 @@ const statusColors: Record<string, string> = {
 };
 
 const LeadsManager = () => {
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const unsubscribe = onSnapshot(collection(db, "leads"), (snapshot) => {
+      const leadsData = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as Lead[];
+      setLeads(leadsData);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    if (confirm("Are you sure you want to delete this lead?")) {
+      try {
+        await deleteDoc(doc(db, "leads", id));
+        toast({ title: "Deleted", description: "Lead removed." });
+      } catch (error) {
+        toast({ variant: "destructive", title: "Error", description: "Failed to delete lead." });
+      }
+    }
+  };
+
+  const handleStatusChange = async (id: string, newStatus: string) => {
+    try {
+      await updateDoc(doc(db, "leads", id), { status: newStatus });
+      toast({ title: "Updated", description: "Lead status updated." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to update status." });
+    }
+  }
 
   const filteredLeads = leads.filter((lead) => {
-    const matchesSearch = lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      lead.company.toLowerCase().includes(searchQuery.toLowerCase());
+    const nameMatch = lead.name?.toLowerCase() || "";
+    const companyMatch = lead.company?.toLowerCase() || "";
+    const matchesSearch = nameMatch.includes(searchQuery.toLowerCase()) ||
+      companyMatch.includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const formatDate = (date: any) => {
+    if (!date) return "N/A";
+    if (date instanceof Timestamp) return date.toDate().toLocaleDateString();
+    if (typeof date === 'string') return new Date(date).toLocaleDateString();
+    return "N/A";
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Leads Manager</h1>
+          <h1 className="text-3xl font-bold">LeadsManager</h1>
           <p className="text-muted-foreground">View and manage contact form submissions.</p>
         </div>
-        <Button>
+        <Button variant="outline">
           <Download className="h-4 w-4 mr-2" />
           Export CSV
         </Button>
@@ -95,7 +142,11 @@ const LeadsManager = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredLeads.map((lead) => (
+                {filteredLeads.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24">No leads found.</TableCell>
+                  </TableRow>
+                ) : filteredLeads.map((lead) => (
                   <TableRow key={lead.id}>
                     <TableCell>
                       <div>
@@ -103,23 +154,25 @@ const LeadsManager = () => {
                         <p className="text-sm text-muted-foreground">{lead.email}</p>
                       </div>
                     </TableCell>
-                    <TableCell>{lead.company}</TableCell>
-                    <TableCell>{lead.service}</TableCell>
+                    <TableCell>{lead.company || "-"}</TableCell>
+                    <TableCell>{lead.service || "-"}</TableCell>
                     <TableCell>
-                      <Badge className={statusColors[lead.status]} variant="secondary">
-                        {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
-                      </Badge>
+                      <Select defaultValue={lead.status || "new"} onValueChange={(val) => handleStatusChange(lead.id, val)}>
+                        <SelectTrigger className={`w-[130px] h-8 ${statusColors[lead.status] || "bg-gray-100"}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new">New</SelectItem>
+                          <SelectItem value="contacted">Contacted</SelectItem>
+                          <SelectItem value="qualified">Qualified</SelectItem>
+                          <SelectItem value="closed">Closed</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
-                    <TableCell>{lead.date}</TableCell>
+                    <TableCell>{formatDate(lead.createdAt)}</TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="outline">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline">
-                          <Mail className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-destructive">
+                        <Button size="sm" variant="outline" className="text-destructive" onClick={() => handleDelete(lead.id)}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>

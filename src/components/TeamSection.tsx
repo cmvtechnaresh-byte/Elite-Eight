@@ -1,42 +1,21 @@
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Linkedin, Mail } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { initialTeam } from "@/lib/initialData";
 
-const team = [
-  {
-    name: "Arjun Mehta",
-    role: "Founder & CEO",
-    image: "",
-    bio: "20+ years in corporate training and HR consulting",
-    linkedin: "#",
-    email: "arjun@eliteeight.com",
-  },
-  {
-    name: "Kavitha Rao",
-    role: "Head of Training",
-    image: "",
-    bio: "Expert in behavioral training & leadership development",
-    linkedin: "#",
-    email: "kavitha@eliteeight.com",
-  },
-  {
-    name: "Vikram Joshi",
-    role: "Compliance Director",
-    image: "",
-    bio: "Specialist in PoSH and regulatory compliance",
-    linkedin: "#",
-    email: "vikram@eliteeight.com",
-  },
-  {
-    name: "Sneha Kapoor",
-    role: "Recruitment Lead",
-    image: "",
-    bio: "Talent acquisition expert with Fortune 500 experience",
-    linkedin: "#",
-    email: "sneha@eliteeight.com",
-  },
-];
+interface TeamMember {
+  id: string;
+  name: string;
+  role: string;
+  image?: string;
+  bio?: string;
+  linkedin?: string;
+  email?: string;
+}
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -61,6 +40,32 @@ const cardVariants = {
 };
 
 export const TeamSection = () => {
+  const [team, setTeam] = useState<any[]>(initialTeam);
+
+  useEffect(() => {
+    const fetchTeam = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "team"));
+        if (!querySnapshot.empty) {
+          const teamData = querySnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          setTeam(teamData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch team", err);
+      }
+    };
+    fetchTeam();
+  }, []);
+
+  if (team.length === 0) {
+    // Optional: Return null or a skeleton here if preferred. 
+    // For now, if empty (e.g. first load), it just won't show cards, which is fine.
+    // Or we can leave the section title but no cards.
+  }
+
   return (
     <section className="py-24 bg-muted/30">
       <div className="container">
@@ -89,8 +94,8 @@ export const TeamSection = () => {
           viewport={{ once: true, margin: "-100px" }}
           className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
         >
-          {team.map((member, index) => (
-            <motion.div key={index} variants={cardVariants}>
+          {team.map((member) => (
+            <motion.div key={member.id} variants={cardVariants}>
               <Card className="group hover:shadow-xl transition-all duration-300 overflow-hidden">
                 <CardContent className="p-6 text-center">
                   <motion.div
@@ -106,22 +111,22 @@ export const TeamSection = () => {
                   </motion.div>
                   <h3 className="font-bold text-xl mb-1">{member.name}</h3>
                   <p className="text-primary font-medium mb-3">{member.role}</p>
-                  <p className="text-muted-foreground text-sm mb-4">{member.bio}</p>
+                  <p className="text-muted-foreground text-sm mb-4">{member.bio || "Team Member"}</p>
                   <div className="flex justify-center gap-3">
-                    <a
+                    {member.linkedin && <a
                       href={member.linkedin}
                       className="p-2 rounded-full bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
                       aria-label={`${member.name}'s LinkedIn`}
                     >
                       <Linkedin className="h-4 w-4" />
-                    </a>
-                    <a
+                    </a>}
+                    {member.email && <a
                       href={`mailto:${member.email}`}
                       className="p-2 rounded-full bg-muted hover:bg-primary hover:text-primary-foreground transition-colors"
                       aria-label={`Email ${member.name}`}
                     >
                       <Mail className="h-4 w-4" />
-                    </a>
+                    </a>}
                   </div>
                 </CardContent>
               </Card>

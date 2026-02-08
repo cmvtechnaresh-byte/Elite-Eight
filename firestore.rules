@@ -1,0 +1,60 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Function to check if user is authenticated and has admin privileges
+    // (In this simple app, we just check if they are logged in. 
+    // real world app would check custom claims or a user role doc)
+    function isAdmin() {
+      return request.auth != null;
+    }
+
+    // "leads" collection
+    // Public can write (submit contact form)
+    // Only Admin can read/delete/update
+    match /leads/{leadId} {
+      allow create: if true;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // "team" collection - Public read, Admin write
+    match /team/{memberId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // "content" collection - Public read, Admin write
+    match /content/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // "services" collection - Public read, Admin write
+    match /services/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // "testimonials" collection - Public read, Admin write
+    match /testimonials/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // "settings" collection - Public read (some settings), Admin write
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+    
+    // "users" collection - authenticated user can read/write their own
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
