@@ -26,6 +26,7 @@ import TestimonialsManager from "./pages/admin/TestimonialsManager";
 import SettingsPage from "./pages/admin/SettingsPage";
 import ContactSubmissions from "./pages/admin/ContactSubmissions";
 import EMSManager from "./pages/admin/EMSManager";
+import AdminManager from "./pages/admin/AdminManager";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,7 @@ const App = () => (
                 <Route path="submissions" element={<ContactSubmissions />} />
                 <Route path="team" element={<TeamManager />} />
                 <Route path="settings" element={<SettingsPage />} />
+                <Route path="users" element={<AdminManager />} />
                 <Route path="ems" element={<EMSManager />} />
               </Route>
             </Route>

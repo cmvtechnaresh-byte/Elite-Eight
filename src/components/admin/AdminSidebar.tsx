@@ -6,7 +6,8 @@ import {
     Settings,
     MessageSquare,
     LogOut,
-    FolderOpen
+    FolderOpen,
+    ShieldCheck
 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -34,6 +35,7 @@ const navItems = [
     { href: "/admin/leads", icon: Mail, label: "Leads" },
     { href: "/admin/submissions", icon: MessageSquare, label: "Contact Forms" },
     { href: "/admin/team", icon: Users, label: "Team" },
+    { href: "/admin/users", icon: ShieldCheck, label: "Admins" },
     { href: "/admin/ems", icon: FolderOpen, label: "EMS" },
     { href: "/admin/settings", icon: Settings, label: "Settings" },
 ];

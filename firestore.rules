@@ -47,9 +47,11 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // "users" collection - authenticated user can read/write their own
+    // "users" collection 
+    // - Authenticated user can read/write their own
+    // - Admins can read/write ALL users (for management)
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && (request.auth.uid == userId || isAdmin());
     }
 
     // Default deny
